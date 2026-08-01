@@ -1,0 +1,5 @@
+# For analyzing and structuring your lap data later
+pandas
+
+# Optional: if you want to make live graphs or charts of your speed/RPM
+matplotlib
