@@ -8,7 +8,7 @@ def main():
     print("Database system initialized successfully.")
 
     # 2. Setup the loopback socket to receive your data stream
-    UDP_IP = "127.0.0.1" 
+    UDP_IP = "0.0.0.0" 
     UDP_PORT = 20777
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -33,7 +33,7 @@ def main():
                 db.save_entry(packet.session_uid, player_metrics)
                 
                 # Immediately push the scrolling trace updates live onto your screen
-                print(f"Logged [Session: {packet.session_uid[-6:]}] -> {player_metrics}", flush=True)
+                print(f"Logged [Session: {packet.session_uid}] -> {player_metrics}", flush=True)
                 
     except KeyboardInterrupt:
         print("\nLogging stopped cleanly. Telemetry tables are saved.")
