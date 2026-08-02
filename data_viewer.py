@@ -37,7 +37,7 @@ def plot_telemetry_traces(db_path="telemetry.db"):
     ax2.plot(df['id'], df['throttle'], color='limegreen', linewidth=2, label='Throttle %')
     ax2.plot(df['id'], df['brake'], color='crimson', linewidth=2, label='Brake %')
     ax2.set_ylabel("Pedal Position (0.0 - 1.0)", fontsize=12, fontweight='bold')
-    ax2.set_xlabel("Time Step (Telemetry Packets @ 20Hz)", fontsize=12, fontweight='bold')
+    ax2.set_xlabel("Time Step (Telemetry Packets @ 60Hz)", fontsize=12, fontweight='bold')
     ax2.grid(True, linestyle='--', alpha=0.5)
     ax2.legend(loc='upper right')
     ax2.set_facecolor('#111111')
