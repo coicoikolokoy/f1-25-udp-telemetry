@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏎️ F1 25 Telemetry (Lite)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="pit-wall-header">
+        <div class="logo-zone">
+            <h1>🏎️ F1 25 TELEMETRY (LITE)</h1>
+            <a href="/" class="nav-link">➔ Full Pit Wall View</a>
+        </div>
+        <div class="lap-selector-zone">
+            <label for="lapSelect">Active Lap:</label>
+            <select id="lapSelect" onchange="onLapChange()"></select>
+        </div>
+    </header>
+
+    <main>
+        <!-- KPI Metric Cards (Using .kpi-container and .kpi-card) -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <span class="kpi-title">TOP SPEED</span>
+                <span class="kpi-value" id="kpiSpeed">0 <small>km/h</small></span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title">MAX THROTTLE</span>
+                <span class="kpi-value" id="kpiThrottle">0%</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title">MAX BRAKE</span>
+                <span class="kpi-value" id="kpiBrake">0%</span>
+            </div>
+            <div class="kpi-card">
+                <span class="kpi-title">LOGGED SAMPLES</span>
+                <span class="kpi-value" id="kpiRows">0 rows</span>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="chart-card">
+            <h3>🏎️ Speed Profile (km/h) vs Lap Distance (m)</h3>
+            <canvas id="speedChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <h3>🎮 Driver Inputs (Throttle & Brake) vs Lap Distance (m)</h3>
+            <canvas id="pedalChart"></canvas>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

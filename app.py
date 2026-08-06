@@ -12,9 +12,13 @@ init_db()
 
 @app.route("/")
 def index():
-    """Serves the main Pit Wall Dashboard HTML layout."""
+    """Main Full Pit Wall Dashboard (GPS Map + Steering Wheel)."""
     return render_template("index.html")
 
+@app.route("/lite")
+def lite():
+    """Lite Streamlit-style Telemetry View."""
+    return render_template("lite.html")
 
 @app.route("/api/laps", methods=["GET"])
 def get_all_laps():
