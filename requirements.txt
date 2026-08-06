@@ -3,3 +3,9 @@ pandas
 
 # Optional: if you want to make live graphs or charts of your speed/RPM
 matplotlib
+
+
+#Optional front end
+streamlit
+sqlite3
+struct
