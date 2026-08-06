@@ -6,9 +6,9 @@ def plot_telemetry_traces(db_path="telemetry.db"):
     # 1. Establish database connection and extract the logged data via SQL
     # We grab data from our high-frequency child table
     query = """
-        SELECT id, speed, throttle, brake 
-        FROM telemetry_log 
-        ORDER BY id ASC
+        SELECT sample_id, speed, throttle, brake 
+        FROM telemetry_samples 
+        ORDER BY sample_id ASC
     """
     
     with sqlite3.connect(db_path) as conn:
@@ -27,15 +27,15 @@ def plot_telemetry_traces(db_path="telemetry.db"):
     fig.suptitle("F1 25 Engineering Telemetry - Simulated Racing Lap", fontsize=16, fontweight='bold')
 
     # ---- CHART 1: Velocity Curve ----
-    ax1.plot(df['id'], df['speed'], color='gold', linewidth=2, label='Speed (km/h)')
+    ax1.plot(df['sample_id'], df['speed'], color='gold', linewidth=2, label='Speed (km/h)')
     ax1.set_ylabel("Speed (km/h)", fontsize=12, fontweight='bold')
     ax1.grid(True, linestyle='--', alpha=0.5)
     ax1.legend(loc='upper right')
     ax1.set_facecolor('#111111') # Dark stealth-style engineering theme background
 
     # ---- CHART 2: Driver Pedal Inputs (Throttle vs Brake) ----
-    ax2.plot(df['id'], df['throttle'], color='limegreen', linewidth=2, label='Throttle %')
-    ax2.plot(df['id'], df['brake'], color='crimson', linewidth=2, label='Brake %')
+    ax2.plot(df['sample_id'], df['throttle'], color='limegreen', linewidth=2, label='Throttle %')
+    ax2.plot(df['sample_id'], df['brake'], color='crimson', linewidth=2, label='Brake %')
     ax2.set_ylabel("Pedal Position (0.0 - 1.0)", fontsize=12, fontweight='bold')
     ax2.set_xlabel("Time Step (Telemetry Packets @ 60Hz)", fontsize=12, fontweight='bold')
     ax2.grid(True, linestyle='--', alpha=0.5)

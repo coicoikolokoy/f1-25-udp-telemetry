@@ -1,39 +1,90 @@
+# main.py
 import socket
-from app.domain.models import TelemetryPacket
-from app.domain.database import TelemetryRepository
+import sys
+from config import UDP_IP, UDP_PORT, BUFFER_SIZE
+from database import init_db, create_new_lap, insert_telemetry_sample
+from packets import Header, PacketID, CarTelemetryData, MotionData, LapData
 
 def main():
-    db = TelemetryRepository("telemetry.db")
-    print("Relational Database system initialized successfully.")
+    # 1. Ensure database schema is initialized
+    init_db()
+    print("Database system initialized.")
 
-    UDP_IP = "0.0.0.0" 
-    UDP_PORT = 20777
-    
+    # 2. Bind UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
-    print(f"Network socket bound. Listening on port {UDP_PORT}...")
+    print(f"Network socket bound. Listening on {UDP_IP}:{UDP_PORT}...")
+
+    # State tracking parameters
+    current_track_id = 11  # Default to Spa-Francorchamps (or update dynamically)
+    active_lap_num = None
+    active_lap_id = None
+
+    # Transient buffers to align multi-packet data before DB insert
+    latest_motion = None
+    latest_lap_data = None
 
     try:
         while True:
-            raw_bytes, addr = sock.recvfrom(4096)
-            packet = TelemetryPacket(raw_bytes)
+            raw_bytes, addr = sock.recvfrom(BUFFER_SIZE)
             
-            # Look strictly for Packet ID 1 (F1 25 Car Telemetry)
-            if packet.is_car_telemetry():
-                # Verify parent session is logged in the database
-                db.create_session_if_missing(packet.session_uid, track_id=1, weather_id=0)
+            try:
+                header = Header(raw_bytes)
+            except ValueError:
+                continue  # Skip corrupt/malformed datagrams
+
+            # --- PACKET TYPE 0: MOTION DATA (GPS World Coordinates) ---
+            if header.packet_id == PacketID.MOTION:
+                latest_motion = MotionData(raw_bytes, header)
+
+            # --- PACKET TYPE 2: LAP DATA (Lap Distance & Lap Numbers) ---
+            elif header.packet_id == PacketID.LAP_DATA:
+                latest_lap_data = LapData(raw_bytes, header)
                 
-                # Unpack velocity, gas, and braking variables
-                player_metrics = packet.unpack_player_data()
-                
-                # Commit straight to your SQLite child table logs
-                db.save_entry(packet.session_uid, player_metrics)
-                
-                # Print clean, scrolling trace lines onto the screen
-                print(f"🏎️ TRACKING LIVE -> {player_metrics}", flush=True)
-                
+                # Check for Lap Number Transitions (create new session lap record)
+                if active_lap_num is None or latest_lap_data.current_lap_num != active_lap_num:
+                    active_lap_num = latest_lap_data.current_lap_num
+                    active_lap_id = create_new_lap(current_track_id, active_lap_num)
+                    print(f"🏎️ NEW LAP DETECTED: Lap #{active_lap_num} (Created lap_id={active_lap_id})")
+
+            # --- PACKET TYPE 6: CAR TELEMETRY (Mechanical Metrics) ---
+            elif header.packet_id == PacketID.CAR_TELEMETRY:
+                # Gate Check 1: We must have an active lap_id and valid lap data
+                if active_lap_id is None or latest_lap_data is None:
+                    continue
+
+                # Gate Check 2: Pre-Start Filter (Ignore negative lap distances before start line)
+                if latest_lap_data.lap_distance < 0:
+                    continue
+
+                telemetry = CarTelemetryData(raw_bytes, header)
+
+                # Pull spatial coordinates from motion buffer if available
+                world_x = latest_motion.world_x if latest_motion else 0.0
+                world_z = latest_motion.world_z if latest_motion else 0.0
+
+                # Commit sample directly to SQLite
+                insert_telemetry_sample(
+                    lap_id=active_lap_id,
+                    lap_distance=latest_lap_data.lap_distance,
+                    speed=telemetry.speed,
+                    throttle=telemetry.throttle,
+                    brake=telemetry.brake,
+                    steer=telemetry.steer,
+                    world_x=world_x,
+                    world_z=world_z
+                )
+
+                print(
+                    f"🏎️ LAP #{active_lap_num} [{latest_lap_data.lap_distance:.1f}m] -> "
+                    f"Speed: {telemetry.speed} km/h | T: {telemetry.throttle:.2f} | "
+                    f"B: {telemetry.brake:.2f} | Steer: {telemetry.steer:.2f}",
+                    flush=True
+                )
+
     except KeyboardInterrupt:
-        print("\nLogging stopped cleanly.")
+        print("\nTelemetry ingestion stopped cleanly.")
+        sock.close()
 
 if __name__ == "__main__":
     main()
