@@ -12,8 +12,11 @@ class LapData:
         # Offsets verified directly from F1 25 PDF Spec (Page 5 & 6):
         # Offset 20: m_lapDistance (float)
         # Offset 33: m_currentLapNum (uint8)
+        last_lap_time_ms, = struct.unpack_from("<I", raw_bytes, offset + 0)
         lap_distance, = struct.unpack_from("<f", raw_bytes, offset + 20)
         current_lap_num = raw_bytes[offset + 33]
+
+        self.last_lap_time_ms = last_lap_time_ms
         
         # SANITY FILTER: Valid track distances are strictly between 0m and 10,000m
         if 0.0 <= lap_distance <= 10000.0:

@@ -102,8 +102,19 @@ def insert_telemetry_sample(
         """, (lap_id, lap_distance, speed, throttle, brake, steer, world_x, world_z))
         conn.commit()
 
+def update_lap_time(lap_id: int, total_lap_time_ms: int, db_path: str = DB_PATH):
+    """Updates total lap time for a completed lap in the laps table."""
+    with sqlite3.connect(db_path, timeout=20.0) as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("""
+            UPDATE laps 
+            SET total_lap_time_ms = ?
+            WHERE lap_id = ?
+        """, (total_lap_time_ms, lap_id))
+        conn.commit()
 
-def get_lap_telemetry_arrays(lap_id: int, db_path: str = DB_PATH) -> Dict[str, Any]:
+def get_lap_telemetry_arrays(lap_id: int, max_points: int = 600, db_path: str = DB_PATH) -> Dict[str, Any]:
     """Extracts telemetry sample arrays ordered by lap_distance ASC matching API contract shape."""
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
@@ -121,6 +132,10 @@ def get_lap_telemetry_arrays(lap_id: int, db_path: str = DB_PATH) -> Dict[str, A
             "lap_distance": [], "speed": [], "throttle": [],
             "brake": [], "steer": [], "world_x": [], "world_z": []
         }
+
+    if len(rows) > max_points:
+        step = len(rows) // max_points
+        rows = rows[::step]
 
     lap_distance, speed, throttle, brake, steer, world_x, world_z = zip(*rows)
 

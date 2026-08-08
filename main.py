@@ -2,7 +2,7 @@
 import socket
 import sys
 from config import UDP_IP, UDP_PORT, BUFFER_SIZE
-from database import init_db, create_new_lap, insert_telemetry_sample
+from database import init_db, create_new_lap, insert_telemetry_sample, update_lap_time
 from packets import Header, PacketID, CarTelemetryData, MotionData, LapData
 
 def main():
@@ -50,10 +50,16 @@ def main():
 
                 # 2. Sequential Check: Create a new lap ONLY when lap number genuinely advances (+1)
                 elif latest_lap_data.current_lap_num == active_lap_num + 1:
+                    # Save completed lap time to previous active_lap_id!
+                    if active_lap_id and latest_lap_data.last_lap_time_ms > 0:
+                        update_lap_time(active_lap_id, latest_lap_data.last_lap_time_ms)
+                        lap_sec = latest_lap_data.last_lap_time_ms / 1000.0
+                        print(f"⏱️ LAP COMPLETED: Lap #{active_lap_num} Time = {lap_sec:.3f}s")
+
+                    # Create new lap
                     active_lap_num = latest_lap_data.current_lap_num
                     active_lap_id = create_new_lap(current_track_id, active_lap_num)
-                    print(f"🏁 NEW LAP DETECTED: Lap #{active_lap_num} (Created lap_id={active_lap_id})")
-
+                    print(f"🏁 NEW LAP STARTED: Lap #{active_lap_num} (lap_id={active_lap_id})")
             # --- PACKET TYPE 6: CAR TELEMETRY (Mechanical Metrics) ---
             elif header.packet_id == PacketID.CAR_TELEMETRY:
                 # Gate Check 1: We must have an active lap_id and valid lap data
