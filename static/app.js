@@ -5,7 +5,7 @@ let selectedLapId = null;
 window.addEventListener("DOMContentLoaded", () => {
     initCharts();
     fetchLaps();
-    setInterval(fetchTelemetry, 1000); // 1 second auto-refresh
+    setInterval(fetchTelemetry, 16.7); // 1 second auto-refresh
 });
 
 function initCharts() {
@@ -100,7 +100,7 @@ async function fetchTelemetry() {
         const wheel = document.getElementById("steeringWheel");
         if (wheel && data.steer && data.steer.length > 0) {
             const lastSteer = data.steer[data.steer.length - 1];
-            wheel.style.transform = `rotate(${lastSteer * 90}deg)`;
+            wheel.style.transform = `rotate(${lastSteer * 200}deg)`;
         }
 
         // Update 2D GPS Map Canvas safely if element exists

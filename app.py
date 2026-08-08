@@ -23,7 +23,7 @@ def lite():
 @app.route("/api/laps", methods=["GET"])
 def get_all_laps():
     """Returns a list of all logged lap IDs and track metadata."""
-    with sqlite3.connect(DB_PATH) as conn:
+    with sqlite3.connect(DB_PATH, timeout=20.0) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT l.lap_id, l.lap_number, t.track_name, l.created_at

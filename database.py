@@ -2,11 +2,12 @@
 import sqlite3
 from typing import Dict, Any, List
 from config import DB_PATH
-
+"""Initializes the SQLite relational database enforcing Foreign Keys and cascade rules."""
 def init_db(db_path: str = DB_PATH):
     """Initializes the SQLite relational database enforcing Foreign Keys and cascade rules."""
-    with sqlite3.connect(db_path) as conn:
+    with sqlite3.connect(db_path, timeout=20.0) as conn:
         cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode = WAL;")
         cursor.execute("PRAGMA foreign_keys = ON;")
         
         # 1. Tracks Lookup Table
