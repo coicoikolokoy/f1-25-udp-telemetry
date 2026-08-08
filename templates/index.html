@@ -20,7 +20,7 @@
         </div>
     </header>
 
-    <main class="dashboard-grid">
+    <main class="dashboard-grid">       
         <!-- KPI Metric Cards -->
         <div class="kpi-container">
             <div class="kpi-card">
@@ -59,7 +59,9 @@
             <div class="gauge-box">
                 <h3>🎡 Live Steering Wheel</h3>
                 <div class="wheel-container">
-                    <div id="steeringWheel" class="steering-wheel">🎡</div>
+                    <!--<div id="steeringWheel" class="steering-wheel">  -->
+                        <img src="{{ url_for('static', filename='wheel.png') }}" id="steeringWheel" class="steering-wheel" alt="My Image">
+                    <!--</div> -->
                 </div>
             </div>
             <div class="map-box">

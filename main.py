@@ -38,14 +38,21 @@ def main():
                 latest_motion = MotionData(raw_bytes, header)
 
             # --- PACKET TYPE 2: LAP DATA (Lap Distance & Lap Numbers) ---
+            # In main.py under PACKET TYPE 2 (LAP DATA):
             elif header.packet_id == PacketID.LAP_DATA:
                 latest_lap_data = LapData(raw_bytes, header)
                 
-                # Check for Lap Number Transitions (create new session lap record)
-                if active_lap_num is None or latest_lap_data.current_lap_num != active_lap_num:
+                # 1. Startup: Create initial lap session (e.g. Lap 1)
+                if active_lap_id is None:
                     active_lap_num = latest_lap_data.current_lap_num
                     active_lap_id = create_new_lap(current_track_id, active_lap_num)
-                    print(f"🏎️ NEW LAP DETECTED: Lap #{active_lap_num} (Created lap_id={active_lap_id})")
+                    print(f"🏎️ SESSION STARTED: Lap #{active_lap_num} (lap_id={active_lap_id})")
+
+                # 2. Sequential Check: Create a new lap ONLY when lap number genuinely advances (+1)
+                elif latest_lap_data.current_lap_num == active_lap_num + 1:
+                    active_lap_num = latest_lap_data.current_lap_num
+                    active_lap_id = create_new_lap(current_track_id, active_lap_num)
+                    print(f"🏁 NEW LAP DETECTED: Lap #{active_lap_num} (Created lap_id={active_lap_id})")
 
             # --- PACKET TYPE 6: CAR TELEMETRY (Mechanical Metrics) ---
             elif header.packet_id == PacketID.CAR_TELEMETRY:

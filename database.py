@@ -50,13 +50,16 @@ def init_db(db_path: str = DB_PATH):
             );
         """)
         
-        # Seed default track lookup data if empty
+       # Seed favorite testing tracks (Official F1 25 IDs)
         cursor.execute("""
             INSERT OR IGNORE INTO tracks (track_id, track_name, total_sectors) 
             VALUES 
-                (11, 'Spa-Francorchamps', 3),
-                (2, 'Monaco', 3),
-                (1, 'Melbourne', 3);
+                (0, 'Melbourne', 3),
+                (5, 'Monaco', 3),
+                (7, 'Silverstone (Britain)', 3),
+                (10, 'Spa-Francorchamps', 3),
+                (11, 'Monza', 3),
+                (17, 'Austria (Red Bull Ring)', 3);
         """)
         
         conn.commit()

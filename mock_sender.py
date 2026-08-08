@@ -11,7 +11,6 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 print("Injecting F1 25 Multi-Packet Racing Simulation (Motion, LapData, Telemetry)...")
 print("Press Ctrl+C to stop.")
 
-# Simulation State Parameters
 fake_session_uid = 987654321012345
 speed = 100.0          # Velocity (km/h)
 throttle = 1.0         # Gas pedal (0.0 to 1.0)
@@ -41,65 +40,61 @@ try:
 
         # --- 1. SIMULATE VEHICLE PHYSICS & DISTANCE ---
         if loop_step < 160:
-            # Main Straight
             throttle = 1.0
             brake = 0.0
             steer = 0.0
             speed += 1.8 if speed < 320 else 0.2
         elif loop_step < 220:
-            # Heavy Braking Zone
             throttle = 0.0
             brake = 1.0
             steer = 0.15
             speed -= 3.5 if speed > 80 else 0.5
         elif loop_step < 320:
-            # Corner Apex Trailing
             throttle = 0.3
             brake = 0.0
             steer = 0.5
             speed += 0.5 if speed < 110 else -1.0
         else:
-            # Corner Exit Acceleration
             throttle = 1.0
             brake = 0.0
             steer = max(0.0, steer - 0.1)
             speed += 1.2
 
-        # Increment distance based on speed (Spa circuit loop is ~7004 meters)
+        # Increment lap distance based on current speed
         lap_distance += (speed / 3.6) * 0.05  # meters moved in 50ms interval
         
-        # Check for Lap Completion (7000 meters = new lap!)
+        # Reset lap distance when crossing finish line (Spa = 7000m)
         if lap_distance >= 7000.0:
             lap_distance = 0.0
             current_lap_num += 1
             print(f"\n🏁 SIMULATOR COMPLETED LAP! Advancing to Lap #{current_lap_num}\n")
 
-        # Simulate 2D GPS World Coordinates (Elliptical track loop)
+        # 2D GPS World Coordinates
         angle = (lap_distance / 7000.0) * (2 * math.pi)
         world_x = math.sin(angle) * 500.0
         world_z = math.cos(angle) * 1000.0
 
-        # --- 2. PACKET ID 0: MOTION DATA (GPS World Coordinates) ---
+        # --- 2. PACKET ID 0: MOTION DATA ---
         motion_packet = build_header(packet_id=0)
         offset_m = 29 + (0 * 60)
         struct.pack_into("<fff", motion_packet, offset_m, world_x, 0.0, world_z)
         sock.sendto(motion_packet, (TARGET_IP, TARGET_PORT))
 
-        # --- 3. PACKET ID 2: LAP DATA (Lap Distance & Lap Number) ---
+        # --- 3. PACKET ID 2: LAP DATA (Offset 20 for distance, Offset 33 for lap num) ---
         lap_packet = build_header(packet_id=2)
-        offset_l = 29 + (0 * 57)
-        struct.pack_into("<f", lap_packet, offset_l + 12, float(lap_distance))
-        lap_packet[offset_l + 26] = current_lap_num
+        offset_l = 29 + (0 * 56)  # 56 bytes per car block
+        struct.pack_into("<f", lap_packet, offset_l + 20, float(lap_distance)) # Offset 20!
+        lap_packet[offset_l + 33] = current_lap_num                              # Offset 33!
         sock.sendto(lap_packet, (TARGET_IP, TARGET_PORT))
 
-        # --- 4. PACKET ID 6: CAR TELEMETRY (Mechanical Metrics) ---
+        # --- 4. PACKET ID 6: CAR TELEMETRY ---
         telemetry_packet = build_header(packet_id=6)
-        offset_t = 29 + (0 * 60)
+        offset_t = 29 + (0 * 60)  # 60 bytes per car block
         packed_metrics = struct.pack("<Hfff", int(speed), throttle, steer, brake)
         telemetry_packet[offset_t : offset_t + 14] = packed_metrics
         sock.sendto(telemetry_packet, (TARGET_IP, TARGET_PORT))
 
-        time.sleep(0.05)  # Maintain 20Hz simulation cadence
+        time.sleep(0.05)  # 20Hz cadence
 
 except KeyboardInterrupt:
     print("\nF1 25 simulation loop halted cleanly.")

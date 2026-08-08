@@ -135,6 +135,12 @@ canvas {
 .steering-wheel {
     font-size: 4rem;
     transition: transform 0.1s ease-out;
+
+    display: block;
+    height: 150px;       /* Fills the 120px container height */
+    width: auto;        /* Keeps the wheel perfectly round */
+    object-fit: contain;
+   
 }
 
 canvas#mapCanvas {
