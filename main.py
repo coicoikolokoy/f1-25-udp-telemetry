@@ -2,8 +2,9 @@
 import socket
 import sys
 from config import UDP_IP, UDP_PORT, BUFFER_SIZE
-from database import init_db, create_new_lap, insert_telemetry_sample, update_lap_time
+from database import init_db, create_new_lap, insert_telemetry_sample, update_lap_time, update_lap_track_id
 from packets import Header, PacketID, CarTelemetryData, MotionData, LapData
+
 
 def main():
     # 1. Ensure database schema is initialized
@@ -16,7 +17,7 @@ def main():
     print(f"Network socket bound. Listening on {UDP_IP}:{UDP_PORT}...")
 
     # State tracking parameters
-    current_track_id = 11  # Default to Spa-Francorchamps (or update dynamically)
+    current_track_id = 11  # Default to Monza
     active_lap_num = None
     active_lap_id = None
 
@@ -37,8 +38,16 @@ def main():
             if header.packet_id == PacketID.MOTION:
                 latest_motion = MotionData(raw_bytes, header)
 
+            # --- PACKET TYPE 1: SESSION DATA (Auto-Detect Track ID) ---
+            elif header.packet_id == PacketID.SESSION:
+                detected_track_id = raw_bytes[36]  # Page 4 of EA PDF Spec: m_trackId (int8)
+                if detected_track_id != 255 and detected_track_id != current_track_id:
+                    current_track_id = detected_track_id
+                    if active_lap_id:
+                        update_lap_track_id(active_lap_id, current_track_id)
+                        print(f"📍 AUTO-DETECTED TRACK: Updated active lap to Track ID #{current_track_id}")
+
             # --- PACKET TYPE 2: LAP DATA (Lap Distance & Lap Numbers) ---
-            # In main.py under PACKET TYPE 2 (LAP DATA):
             elif header.packet_id == PacketID.LAP_DATA:
                 latest_lap_data = LapData(raw_bytes, header)
                 
@@ -60,6 +69,7 @@ def main():
                     active_lap_num = latest_lap_data.current_lap_num
                     active_lap_id = create_new_lap(current_track_id, active_lap_num)
                     print(f"🏁 NEW LAP STARTED: Lap #{active_lap_num} (lap_id={active_lap_id})")
+
             # --- PACKET TYPE 6: CAR TELEMETRY (Mechanical Metrics) ---
             elif header.packet_id == PacketID.CAR_TELEMETRY:
                 # Gate Check 1: We must have an active lap_id and valid lap data

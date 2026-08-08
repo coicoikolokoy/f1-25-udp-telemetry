@@ -150,5 +150,20 @@ def get_lap_telemetry_arrays(lap_id: int, max_points: int = 600, db_path: str = 
         "world_z": list(world_z)
     }
 
+# In database.py:
+
+def update_lap_track_id(lap_id: int, track_id: int, db_path: str = DB_PATH):
+    """Updates the track_id for an active lap session in SQLite once auto-detected."""
+    with sqlite3.connect(db_path, timeout=20.0) as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("""
+            UPDATE laps 
+            SET track_id = ?
+            WHERE lap_id = ?
+        """, (track_id, lap_id))
+        conn.commit()
+
+        
 if __name__ == "__main__":
     init_db()

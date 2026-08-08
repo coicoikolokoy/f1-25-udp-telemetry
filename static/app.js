@@ -201,3 +201,16 @@ function cacheTrackOutline(worldX, worldZ) {
 
     isMapCached = true;
 }
+
+// In static/app.js: Update map background image dynamically based on selected track!
+let currentTrackMapImg = new Image();
+
+async function loadTrackMapImage(trackId) {
+    try {
+        const res = await fetch(`/api/map_image/${trackId}`);
+        const data = await res.json();
+        currentTrackMapImg.src = data.map_url;
+    } catch (e) {
+        console.error("Error loading track map image:", e);
+    }
+}

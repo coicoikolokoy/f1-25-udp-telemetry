@@ -70,6 +70,23 @@ def get_latest_telemetry():
     return jsonify(data)
 
 
+
+# In app.py:
+
+@app.route("/api/map_image/<int:track_id>")
+def get_track_map_image(track_id: int):
+    """Returns the filename of the pre-rendered reference map image for a track ID."""
+    track_map_files = {
+        0: "melbourne_telemetry_map.png",
+        5: "monaco_lap_backup_map.png",
+        7: "silverstone_telemetry_map.png",
+        10: "spa_telemetry_map.png",
+        11: "monza_telemetry_map.png"
+    }
+    filename = track_map_files.get(track_id, "telemetry_map.png")
+    return jsonify({"map_url": f"/static/images/maps/{filename}"})
+
+
 if __name__ == "__main__":
     print("🚀 Starting F1 25 Telemetry Flask API on http://127.0.0.1:5000")
     app.run(host="0.0.0.0", port=5001, debug=True)
